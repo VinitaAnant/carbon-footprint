@@ -1,0 +1,229 @@
+# Specification Document: Personal Carbon Footprint Tracker
+
+## 1. Introduction
+
+This document details the technical specifications for the Personal Carbon Footprint Tracker mobile application. It expands upon the Lean PRD by providing granular requirements for features, userflows, data models, and external integrations.
+
+## 2. Core Functional Requirements
+
+### 2.1 Carbon Footprint Calculators
+
+The application shall provide dedicated calculators for various carbon emission sources.
+
+*   **2.1.1 Transportation (Flights)**
+    *   **Input:** Origin airport (IATA code), Destination airport (IATA code), Class of travel (Economy, Business, First), Number of passengers.
+    *   **Calculation:** Utilize external APIs for flight distance and emission factors per passenger-kilometer by class.
+    *   **Output:** CO2e emissions for the flight.
+*   **2.1.2 Transportation (Driving)**
+    *   **Input:** Vehicle type (e.g., Sedan, SUV, Electric Vehicle), Fuel type (Gasoline, Diesel, Electric), Distance traveled (miles/km), Fuel efficiency (MPG/L/100km or kWh/100km).
+    *   **Calculation:** Apply emission factors for chosen fuel type and distance. For EVs, account for grid emission factors based on user's region if specified.
+    *   **Output:** CO2e emissions for the drive.
+*   **2.1.3 Energy Consumption (Home Electricity)**
+    *   **Input:** Monthly electricity usage (kWh), User's geographic region/country (for grid emission factor).
+    *   **Calculation:** Multiply kWh by regional grid emission factor.
+    *   **Output:** CO2e emissions from electricity usage.
+*   **2.1.4 Diet**
+    *   **Input:** Frequency of consumption for various food categories (e.g., Red Meat, Poultry, Dairy, Vegetables, Vegan). User can select pre-defined dietary patterns (e.g., Vegan, Vegetarian, Pescatarian, Omnivore).
+    *   **Calculation:** Apply average emission factors per food category/dietary pattern.
+    *   **Output:** Estimated CO2e emissions from diet.
+*   **2.1.5 Waste**
+    *   **Input:** Estimated weekly/monthly amount of waste generated (e.g., total waste volume, percentage recycled/composted).
+    *   **Calculation:** Apply average emission factors per unit of waste based on disposal method (landfill, recycling, composting).
+    *   **Output:** Estimated CO2e emissions from waste.
+
+### 2.2 Personalized Footprint Breakdown
+
+*   **2.2.1 Dashboard Display:** A primary dashboard shall present the user's total carbon footprint and a breakdown by source (Transportation, Energy, Diet, Waste) using pie charts, bar graphs, or similar visual representations.
+*   **2.2.2 Drill-down Capability:** Users shall be able to tap on a category to view more detailed breakdowns (e.g., Transportation: Flights vs. Driving).
+*   **2.2.3 Time Period Selection:** Users shall be able to view their footprint for different periods (daily, weekly, monthly, annually).
+
+### 2.3 Goal Setting & Progress Tracking
+
+*   **2.3.1 Goal Definition:** Users shall be able to set a specific CO2e reduction target (e.g., "Reduce my footprint by 10%").
+*   **2.3.2 Baseline Establishment:** The application shall establish a baseline footprint upon initial data entry.
+*   **2.3.3 Historical Data Visualization:** Graphs shall display the user's carbon footprint over time, indicating progress towards their goals.
+*   **2.3.4 Goal Achievement Indicators:** Visual cues (e.g., progress bars, badges) shall indicate goal attainment.
+
+### 2.4 Actionable Sustainability Tips
+
+*   **2.4.1 Recommendation Engine:** The application shall provide personalized tips based on the user's highest emission categories and declared habits.
+    *   *Example:* If "Red Meat" is a high contributor, suggest "Try a meatless Monday." If "Electricity" is high, suggest "Unplug idle electronics."
+*   **2.4.2 Tip Categorization:** Tips shall be categorized (e.g., Easy, Moderate, Advanced) and by impact level.
+*   **2.4.3 Tip Tracking:** Users shall be able to mark tips as "implemented" or "saved for later."
+
+### 2.5 Educational Resources
+
+*   **2.5.1 Content Library:** An in-app section with articles, infographics, and videos explaining concepts like:
+    *   What is CO2e / Global Warming Potential (GWP)
+    *   Impact of different activities on carbon footprint
+    *   Benefits of sustainable living
+    *   How to interpret data
+*   **2.5.2 Search/Filter:** Ability to search or filter educational content by topic.
+
+### 2.6 Data Export/Sharing (Optional)
+
+*   **2.6.1 Data Export:** Users shall be able to export their historical carbon footprint data (e.g., CSV, PDF) for a chosen period.
+*   **2.6.2 Sharing Functionality:** Users shall be able to share their progress or individual carbon footprint metrics (e.g., "My monthly footprint is X CO2e!") to social media platforms. Sharing should be opt-in and respect user privacy settings.
+
+### 2.7 Reminders & Nudges
+
+*   **2.7.1 Data Entry Reminders:** Configurable push notifications to remind users to log daily/weekly activities.
+*   **2.7.2 Goal Progress Nudges:** Notifications celebrating progress or gently reminding users of their goals.
+*   **2.7.3 Educational Nudges:** Occasional relevant tips or facts delivered as notifications.
+
+## 3. Non-Functional Requirements
+
+### 3.1 Performance
+
+*   **Calculation Speed:** Carbon footprint calculations should be near real-time (< 1 second).
+*   **Data Loading:** Dashboards and historical data should load within 3 seconds.
+
+### 3.2 Security & Privacy
+
+*   **Data Encryption:** All user data, both in transit and at rest, shall be encrypted.
+*   **GDPR/CCPA Compliance:** The application will adhere to relevant data protection regulations.
+*   **Authentication:** Secure user authentication (e.g., OAuth 2.0).
+*   **Personal Data:** User's personal details (e.g., email, location) will not be explicitly linked to carbon footprint data unless explicitly consented for research/reporting. Anonymized data may be used for aggregate insights.
+
+### 3.3 Usability & UX
+
+*   **Intuitive Interface:** Easy-to-navigate interface with clear labeling and minimal steps for common tasks.
+*   **Accessibility:** Adherence to WCAG 2.1 guidelines for visual and interactive elements.
+*   **Cross-Platform Compatibility:** Native iOS and Android application with a consistent user experience.
+
+### 3.4 Scalability
+
+*   **User Base:** The backend infrastructure should support scaling to millions of users.
+*   **Data Storage:** The database should efficiently handle growing amounts of user-generated data.
+
+## 4. Data Model (Conceptual)
+
+*   **User:** UserID, Email, PasswordHash, DisplayName, RegistrationDate, PreferredUnits (Metric/Imperial).
+*   **FootprintEntry:** EntryID, UserID, SourceCategory (Transportation, Energy, Diet, Waste), SubCategory (Flight, Driving, Electricity, RedMeat), Value (CO2e), EntryDate, InputDetails (JSON blob for raw input).
+*   **Goal:** GoalID, UserID, StartDate, EndDate, TargetReductionPercentage, CurrentProgress.
+*   **Tip:** TipID, Category, Headline, Description, ImpactLevel, Difficulty.
+*   **UserTipStatus:** UserID, TipID, Status (Implemented, Saved, Dismissed), DateModified.
+*   **EducationalContent:** ContentID, Title, Category, ContentBody (Markdown/HTML), URL (for external links).
+
+## 5. User Flows (High-Level)
+
+1.  **Onboarding:** Register/Login -> Initial Footprint Survey (optional/guided data entry) -> Dashboard.
+2.  **Log Activity:** Select Category -> Enter Details -> View Updated Footprint.
+3.  **View Progress:** Dashboard -> Select Time Period -> Analyze Trends.
+4.  **Set Goal:** Dashboard/Settings -> Define Target -> Monitor Progress.
+5.  **Explore Tips:** Tips Section -> Filter/Search -> Adopt Tip.
+6.  **Read Education:** Education Section -> Browse Content.
+
+## 6. External System Connections
+
+```yaml
+external_systems:
+  - name: "Flight Emissions API"
+    description: "Calculates CO2e for flights based on origin, destination, and class."
+    purpose: "Support for Carbon Footprint Calculators (Transportation - Flights)."
+    type: "REST API"
+    endpoint_example: "https://api.flightemissions.com/calculate"
+    authentication:
+      method: "API Key"
+      location: "Header"
+    data_exchange:
+      request:
+        format: "JSON"
+        fields:
+          - { name: "origin_iata", type: "string", description: "Origin airport IATA code" }
+          - { name: "destination_iata", type: "string", description: "Destination airport IATA code" }
+          - { name: "cabin_class", type: "string", description: "Economy, Business, First" }
+          - { name: "passengers", type: "integer", description: "Number of passengers", optional: true, default: 1 }
+      response:
+        format: "JSON"
+        fields:
+          - { name: "co2_tonnes", type: "float", description: "Total CO2e emissions in metric tonnes" }
+          - { name: "distance_km", type: "integer", description: "Flight distance in kilometers" }
+    rate_limits: "Standard API rate limits (e.g., 1000 requests/day)"
+    error_handling: "HTTP status codes, structured error messages in JSON"
+
+  - name: "Fuel & Energy Emission Factors Database"
+    description: "Provides up-to-date CO2e emission factors for various fuel types and electricity grids."
+    purpose: "Support for Carbon Footprint Calculators (Transportation - Driving, Energy - Home Electricity)."
+    type: "REST API (or internal database updated via external source)"
+    endpoint_example: "https://api.emissionfactors.org/factors" # Conceptual endpoint
+    authentication:
+      method: "API Key"
+      location: "Query Parameter"
+    data_exchange:
+      request:
+        format: "JSON"
+        fields:
+          - { name: "type", type: "string", description: "electricity_grid, gasoline, diesel, etc." }
+          - { name: "region", type: "string", description: "Geographic region (e.g., US, EU, CA-ON)", optional: true }
+          - { name: "unit", type: "string", description: "kWh, litres, kg" }
+      response:
+        format: "JSON"
+        fields:
+          - { name: "factor_co2e", type: "float", description: "CO2e per unit" }
+          - { name: "unit", type: "string", description: "Unit corresponding to factor" }
+    rate_limits: "Standard API rate limits (e.g., 500 requests/hour)"
+    error_handling: "HTTP status codes, structured error messages in JSON"
+
+  - name: "Food Emission Factors Database"
+    description: "Provides average CO2e emission factors per unit or serving for various food categories."
+    purpose: "Support for Carbon Footprint Calculators (Diet)."
+    type: "REST API (or internal database updated via external source)"
+    endpoint_example: "https://api.foodemissions.com/factors" # Conceptual endpoint
+    authentication:
+      method: "None / API Key (TBD)"
+    data_exchange:
+      request:
+        format: "JSON"
+        fields:
+          - { name: "food_category", type: "string", description: "e.g., red_meat, poultry, dairy, vegetables" }
+          - { name: "unit", type: "string", description: "e.g., kg, serving" }
+      response:
+        format: "JSON"
+        fields:
+          - { name: "factor_co2e", type: "float", description: "CO2e per unit/serving" }
+    rate_limits: "TBD"
+    error_handling: "HTTP status codes"
+
+  - name: "Firebase Cloud Messaging (FCM) / Apple Push Notification service (APNs)"
+    description: "Sends push notifications to mobile devices."
+    purpose: "Reminders & Nudges."
+    type: "Messaging Service"
+    endpoint_example: "N/A (SDK integration)"
+    authentication:
+      method: "API Key / Service Account credentials"
+    data_exchange:
+      request:
+        format: "JSON (via SDK)"
+        fields:
+          - { name: "to", type: "string", description: "Device token" }
+          - { name: "notification", type: "object", description: "Payload for user-facing notification" }
+      response:
+        format: "JSON"
+        fields:
+          - { name: "success", type: "integer", description: "Number of successful messages" }
+          - { name: "failure", type: "integer", description: "Number of failed messages" }
+    rate_limits: "Platform specific (usually very high)"
+    error_handling: "SDK handles failures and provides error codes"
+
+  - name: "Social Media Sharing APIs"
+    description: "Enables sharing content to social media platforms (e.g., Facebook, Twitter, Instagram)."
+    purpose: "Data Export/Sharing (Optional)."
+    type: "REST API"
+    endpoint_example: "https://graph.facebook.com/v16.0/me/feed" # Example for Facebook
+    authentication:
+      method: "OAuth 2.0 (User Authorization)"
+    data_exchange:
+      request:
+        format: "JSON (platform-specific)"
+        fields:
+          - { name: "message", type: "string", description: "User's social media post content" }
+          - { name: "link", type: "string", description: "Optional link back to the app/website" }
+          - { name: "image", type: "string", description: "Optional image (e.g., screenshot of progress)" }
+      response:
+        format: "JSON (platform-specific)"
+        fields:
+          - { name: "id", type: "string", description: "ID of the shared post" }
+    rate_limits: "Platform-specific"
+    error_handling: "Platform-specific HTTP status codes and error messages"
+```
