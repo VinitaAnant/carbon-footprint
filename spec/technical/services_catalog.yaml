@@ -1,0 +1,207 @@
+```yaml
+# Personal Carbon Footprint Tracker - Microservices Specification
+
+microservices:
+  - name: carbon-footprint-calculator-service
+    description: Calculates carbon emissions based on user inputs for various categories.
+    owner: ["engineering-team-alpha"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q4 2023: Initial PoC for transportation and energy calculations."
+        - "Q1 2024: Full implementation of all calculator categories (transport, energy, diet, waste)."
+        - "Q2 2024: Integration with third-party data sources for more accurate emission factors."
+    endpoints:
+      - /calculate/transport: POST (Input: {type, distance, fuel_efficiency, passengers})
+      - /calculate/energy: POST (Input: {type, consumption_unit, consumption_value, energy_source})
+      - /calculate/diet: POST (Input: {meat_consumption_frequency, dairy_consumption_frequency, local_produce_percentage})
+      - /calculate/waste: POST (Input: {recycling_percentage, composting_percentage})
+    dependencies:
+      - emission-factor-data-service (external)
+    data_stores:
+      - type: "NoSQL" # For caching emission factors
+        details: "DynamoDB"
+
+  - name: user-profile-service
+    description: Manages user accounts, personal information, preferences, and authentication.
+    owner: ["engineering-team-alpha"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q4 2023: User registration, login, and basic profile management."
+        - "Q1 2024: Integration with OAuth providers (Google, Apple)."
+        - "Q2 2024: Advanced user preferences and privacy controls."
+    endpoints:
+      - /users: POST (Create user)
+      - /users/{user_id}: GET, PUT, DELETE
+      - /login: POST
+      - /profile/preferences/{user_id}: GET, PUT
+    dependencies: []
+    data_stores:
+      - type: "Relational"
+        details: "PostgreSQL" # For user authentication and profile data
+
+  - name: carbon-data-storage-service
+    description: Stores and retrieves all user-reported carbon footprint data entries.
+    owner: ["engineering-team-beta"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q4 2023: Basic data ingestion and retrieval for carbon entries."
+        - "Q1 2024: Indexing for time-series data and efficient querying."
+        - "Q2 2024: Data validation and cleansing mechanisms."
+    endpoints:
+      - /carbon-entries: POST (Input: {user_id, category, value, emissions, timestamp})
+      - /carbon-entries/{user_id}: GET (Filter: startDate, endDate, category)
+      - /carbon-entries/{entry_id}: GET, PUT, DELETE
+    dependencies:
+      - user-profile-service
+    data_stores:
+      - type: "NoSQL" # Time-series optimized for high write/read volume
+        details: "CassandraDB / InfluxDB (TBD)"
+
+  - name: goal-tracking-service
+    description: Manages carbon reduction goals, tracks progress, and calculates achievement metrics.
+    owner: ["engineering-team-gamma"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q4 2023: Goal setting and basic current progress calculation."
+        - "Q1 2024: Historical goal tracking and visualization data preparation."
+        - "Q2 2024: Integration with recommendation engine for personalized goal suggestions."
+    endpoints:
+      - /goals: POST (Create goal), GET (List user goals)
+      - /goals/{goal_id}: GET, PUT, DELETE
+      - /goals/{goal_id}/progress: GET (Returns current progress vs. target)
+    dependencies:
+      - user-profile-service
+      - carbon-data-storage-service
+    data_stores:
+      - type: "Relational"
+        details: "PostgreSQL" # For goal definitions and metadata
+
+  - name: recommendation-engine-service
+    description: Generates personalized sustainability tips and actionable recommendations.
+    owner: ["engineering-team-delta"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q1 2024: Rule-based recommendation engine for initial tips."
+        - "Q2 2024: Integration with carbon data to provide data-driven suggestions."
+        - "Q3 2024: Machine learning model for advanced personalization based on user habits."
+    endpoints:
+      - /recommendations/{user_id}: GET (Returns a list of prioritized tips)
+      - /tips/{tip_id}: GET (Returns detailed info for a specific tip)
+    dependencies:
+      - user-profile-service
+      - carbon-data-storage-service
+      - educational-content-service
+    data_stores:
+      - type: "NoSQL" # For storing recommendation rules and historical user interactions
+        details: "Redis / MongoDB (TBD)"
+
+  - name: educational-content-service
+    description: Manages all in-app educational resources and static content.
+    owner: ["marketing-team"] # Content management, engineering supports API
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q4 2023: Content repository setup and basic API for retrieval."
+        - "Q1 2024: Categorization and tagging of content."
+        - "Q2 2024: Content versioning and publishing workflow."
+    endpoints:
+      - /content/categories: GET
+      - /content/{category_id}: GET (Lists articles/resources in category)
+      - /content/{article_id}: GET (Returns full article content)
+    dependencies: []
+    data_stores:
+      - type: "Object Storage" # For rich media content
+        details: "AWS S3 / GCP Cloud Storage"
+      - type: "CMS (Headless)" # For structured articles metadata
+        details: "Contentful / Strapi (TBD)"
+
+  - name: notification-service
+    description: Handles sending in-app notifications, reminders, and nudges to users.
+    owner: ["engineering-team-gamma"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q1 2024: Basic in-app notification delivery."
+        - "Q2 2024: Push notification integration for mobile."
+        - "Q3 2024: Configurable notification preferences for users."
+    endpoints:
+      - /notifications: POST (Send notification - Input: {user_id, message, type, deep_link})
+      - /notifications/{user_id}: GET (Retrieve user's unread notifications)
+      - /reminders: POST (Schedule reminder - Input: {user_id, trigger_time, message, action})
+    dependencies:
+      - user-profile-service
+    data_stores:
+      - type: "NoSQL" # For storing notification logs and scheduled reminders
+        details: "MongoDB"
+
+  - name: data-export-service
+    description: Enables users to export their carbon footprint data.
+    owner: ["engineering-team-beta"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q2 2024: Basic data export to CSV/JSON format."
+        - "Q3 2024: Secure sharing functionality with other users (with consent)."
+        - "Q4 2024: Integration with external reporting tools (e.g., Google Sheets)."
+    endpoints:
+      - /export/{user_id}: GET (Input: {format, start_date, end_date})
+      - /share/{user_id}: POST (Input: {recipient_email, data_selection})
+    dependencies:
+      - carbon-data-storage-service
+      - user-profile-service
+    data_stores:
+      - type: "Object Storage" # For temporary storage of generated export files
+        details: "AWS S3 / GCP Cloud Storage"
+
+  - name: API-Gateway
+    description: Central entry point for all client requests, handles routing, authentication, and rate limiting.
+    owner: ["platform-team"]
+    lifecycle:
+      status: "design"
+      last_updated: "2023-10-27"
+      roadmap:
+        - "Q4 2023: Initial setup for routing and basic authentication."
+        - "Q1 2024: Advanced security policies and rate limiting."
+        - "Q2 2024: Observability features (logging, tracing)."
+    dependencies:
+      - ALL microservices
+    data_stores: [] # Uses internal caching mechanisms
+
+external_dependencies:
+  - name: emission-factor-data-service
+    description: Provides up-to-date carbon emission factors for various activities (e.g., kg CO2e per kWh, per mile).
+    owner: ["third-party-provider"]
+    lifecycle:
+      status: "production"
+      last_updated: "2023-10-01"
+      roadmap: [] # Managed by external provider
+    endpoints:
+      - /factors/electricity/{region}: GET
+      - /factors/fuel/{type}: GET
+      - /factors/food/{type}: GET
+    notes: "Requires robust API integration and error handling."
+
+  - name: user-analytics-platform
+    description: Collects and analyzes anonymous user engagement data for success metrics.
+    owner: ["data-team"]
+    lifecycle:
+      status: "production"
+      last_updated: "2023-10-15"
+      roadmap: [] # Managed by data team
+    endpoints:
+      - /track/event: POST (Input: {user_id (hashed), event_name, properties})
+    notes: "Strict adherence to privacy policies required."
+```
