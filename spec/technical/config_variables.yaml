@@ -1,0 +1,263 @@
+I will now generate a detailed specification document for the Personal Carbon Footprint Tracker mobile application, focusing on the environment variables schema in YAML as requested.
+
+---
+
+## Detailed Specification: Personal Carbon Footprint Tracker
+
+### 1. Introduction
+
+This document provides a detailed specification for the environment variables required for the Personal Carbon Footprint Tracker mobile application. These variables are crucial for configuring the application across different deployment environments (e.g., development, staging, production) and for integrating with external services.
+
+### 2. Environment Variables Schema (YAML)
+
+This section defines the structure, types, and descriptions for all anticipated environment variables.
+
+```yaml
+# Environment variables schema for the Personal Carbon Footprint Tracker application
+
+# General Application Settings
+APP_SETTINGS:
+  # Unique identifier for the application instance. Useful for telemetry and logging.
+  INSTANCE_ID:
+    type: string
+    description: "A unique identifier for the current application instance or deployment."
+    example: "prod-server-us-east-1"
+    required: false # Can be generated if not provided
+  # Environment type (e.g., development, staging, production)
+  ENVIRONMENT:
+    type: string
+    enum: ["development", "staging", "production", "test"]
+    description: "The current deployment environment of the application."
+    example: "production"
+    required: true
+  # Base URL for the public-facing application (e.g., for deep links, sharing)
+  APP_BASE_URL:
+    type: string
+    description: "The base URL for the application, used for constructing deep links or public facing URLs."
+    example: "https://mycarbonfootprint.app"
+    required: false # May be derived in some mobile contexts
+
+# Database Configuration
+DATABASE:
+  # Type of database used (e.g., PostgreSQL, MongoDB, SQLite)
+  TYPE:
+    type: string
+    enum: ["POSTGRESQL", "MONGODB", "SQLITE", "FIRESTORE"]
+    description: "The type of database service being used."
+    example: "POSTGRESQL"
+    required: true
+  # Endpoint or host for the database connection
+  HOST:
+    type: string
+    description: "The hostname or IP address of the database server."
+    example: "db.mycarbonfootprint.com"
+    required: true
+  # Port number for the database connection
+  PORT:
+    type: integer
+    description: "The port number for connecting to the database."
+    example: 5432
+    required: true
+  # Name of the database to connect to
+  NAME:
+    type: string
+    description: "The name of the database instance."
+    example: "carbon_tracker_db"
+    required: true
+  # Username for database authentication
+  USERNAME:
+    type: string
+    description: "The username for database authentication."
+    example: "app_user"
+    required: true
+  # Password for database authentication (sensitive, should be managed securely)
+  PASSWORD:
+    type: string
+    description: "The password for database authentication. **Sensitive, manage securely.**"
+    example: "highlySecurePassword123"
+    required: true
+    secret: true # Indicates this should be treated as a secret
+
+# Authentication & Authorization Settings
+AUTH:
+  # JWT Secret for token signing (if using JWTs)
+  JWT_SECRET:
+    type: string
+    description: "Secret key for signing and verifying JSON Web Tokens (JWTs). **Sensitive, manage securely.**"
+    example: "your_super_secret_jwt_key_here"
+    required: true
+    secret: true
+  # JWT Expiration time in seconds
+  JWT_EXPIRATION_SECONDS:
+    type: integer
+    description: "Expiration time for JWTs in seconds."
+    example: 3600 # 1 hour
+    required: true
+  # API Key for internal service-to-service communication (if applicable)
+  INTERNAL_API_KEY:
+    type: string
+    description: "API key for internal services to authenticate with each other. **Sensitive, manage securely.**"
+    example: "internal_service_api_key_123"
+    required: false # Only if internal services need 
+    secret: true
+
+# External API Integrations
+EXTERNAL_APIS:
+  # Carbon Calculation API (e.g., electricity grids, flight emissions database)
+  CARBON_CALCULATION_PROVIDER:
+    type: string
+    enum: ["ECOCHAIN", "CLIMATE_API", "INTERNAL"] # Example providers
+    description: "Specifies the external API provider for carbon emission calculations."
+    example: "ECOCHAIN"
+    required: true
+  CARBON_CALCULATION_API_KEY:
+    type: string
+    description: "API key for the chosen external carbon calculation service. **Sensitive, manage securely.**"
+    example: "carbon_api_key_abc"
+    required: true
+    secret: true
+  CARBON_CALCULATION_BASE_URL:
+    type: string
+    description: "Base URL for the external carbon calculation service."
+    example: "https://api.ecochain.com/v1"
+    required: true
+  # Geocoding Service (e.g., for location-based energy data, driving routes)
+  GEOCODING_PROVIDER:
+    type: string
+    enum: ["GOOGLE_MAPS_API", "OPENSTREETMAP_NOMINATIM", "INTERNAL"]
+    description: "Specifies the external API provider for geocoding services."
+    example: "GOOGLE_MAPS_API"
+    required: false # Depending on feature implementation
+  GEOCODING_API_KEY:
+    type: string
+    description: "API key for the chosen external geocoding service. **Sensitive, manage securely.**"
+    example: "google_maps_api_key_xyz"
+    required: false
+    secret: true
+  GEOCODING_BASE_URL:
+    type: string
+    description: "Base URL for the external geocoding service."
+    example: "https://maps.googleapis.com/maps/api/geocode/json"
+    required: false
+  # Push Notification Service (e.g., Firebase Cloud Messaging, OneSignal)
+  PUSH_NOTIFICATIONS_PROVIDER:
+    type: string
+    enum: ["FCM", "ONESIGNAL", "NONE"]
+    description: "Specifies the external provider for push notifications."
+    example: "FCM"
+    required: false # Only if reminders/nudges are implemented via push
+  PUSH_NOTIFICATIONS_SERVER_KEY:
+    type: string
+    description: "Server key for the chosen push notification service. **Sensitive, manage securely.**"
+    example: "fcm_server_key_12345"
+    required: false
+    secret: true
+  PUSH_NOTIFICATIONS_PROJECT_ID:
+    type: string
+    description: "Project ID for the chosen push notification service (e.g., Firebase Project ID)."
+    example: "carbon-tracker-fcm"
+    required: false
+
+# Cloud Storage Configuration (e.g., for user profile images, data exports)
+CLOUD_STORAGE:
+  PROVIDER:
+    type: string
+    enum: ["AWS_S3", "GOOGLE_CLOUD_STORAGE", "AZURE_BLOB_STORAGE", "NONE"]
+    description: "Specifies the cloud storage provider for file uploads and static assets."
+    example: "AWS_S3"
+    required: false # Only if data export or user images are enabled.
+  BUCKET_NAME:
+    type: string
+    description: "The name of the storage bucket."
+    example: "carbon-tracker-data"
+    required: false
+  REGION:
+    type: string
+    description: "The region of the cloud storage bucket."
+    example: "us-east-1"
+    required: false
+  ACCESS_KEY_ID:
+    type: string
+    description: "Access key ID for cloud storage. **Sensitive, manage securely.**"
+    example: "AKIAIOSFODNN7EXAMPLE"
+    required: false
+    secret: true
+  SECRET_ACCESS_KEY:
+    type: string
+    description: "Secret access key for cloud storage. **Sensitive, manage securely.**"
+    example: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    required: false
+    secret: true
+
+# Logging & Monitoring Configuration
+LOGGING:
+  # Level of logging (e.g., DEBUG, INFO, WARNING, ERROR)
+  LEVEL:
+    type: string
+    enum: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    description: "The minimum severity level for logs to be recorded."
+    example: "INFO"
+    required: true
+  # Destination for logs (e.g., stdout, file, remote service like Splunk/ELK/CloudWatch)
+  DESTINATION:
+    type: string
+    enum: ["STDOUT", "FILE", "LOG_SERVICE"]
+    description: "Where application logs should be sent."
+    example: "STDOUT"
+    required: true
+  # API Key for remote log service
+  LOG_SERVICE_API_KEY:
+    type: string
+    description: "API key for integrated log monitoring service. **Sensitive, manage securely.**"
+    example: "splunk_api_key_abc"
+    required: false # Only if LOG_SERVICE
+    secret: true
+
+# Frontend/Client-side specific configurations (if applicable, for React Native/Flutter build steps)
+FRONTEND:
+  # Feature flag for enabling/disabling optional features
+  ENABLE_DATA_EXPORT_SHARE:
+    type: boolean
+    description: "Feature flag to enable or disable the data export and sharing functionality."
+    example: true
+    required: false
+  ENABLE_ANALYTICS:
+    type: boolean
+    description: "Feature flag to enable or disable analytics tracking."
+    example: true
+    required: false
+  ANALYTICS_TRACKING_ID:
+    type: string
+    description: "Tracking ID for the analytics service (e.g., Google Analytics, Amplitude)."
+    example: "UA-12345-67"
+    required: false
+
+# Email Service Configuration (e.g., for forgotten passwords, notifications)
+EMAIL_SERVICE:
+  PROVIDER:
+    type: string
+    enum: ["SENDGRID", "MAILGUN", "AWS_SES", "NONE"]
+    description: "Specifies the email service provider."
+    example: "SENDGRID"
+    required: false # Only if email notifications are needed
+  API_KEY:
+    type: string
+    description: "API key for the email service provider. **Sensitive, manage securely.**"
+    example: "SG.your_sendgrid_api_key"
+    required: false
+    secret: true
+  SENDER_EMAIL:
+    type: string
+    description: "The default sender email address for automated emails."
+    example: "no-reply@mycarbonfootprint.app"
+    required: false
+```
+
+### 3. Usage and Best Practices
+
+*   **Security:** All variables marked `secret: true` must be handled with extreme care. They should not be committed directly into source control. Instead, use environment-specific secret management solutions (e.g., Kubernetes Secrets, AWS Secrets Manager, Google Secret Manager, HashiCorp Vault, or `.env` files for local development that are not committed).
+*   **Environment-Specific Files:** It is recommended to use separate environment variable files (e.g., `.env.development`, `.env.production`) or configuration management systems (e.g., Docker Compose `.env` files, CI/CD pipelines) to manage these variables for different deployment stages.
+*   **Validation:** Implement robust validation in the application startup process to ensure all `required: true` variables are set and conform to their specified types and enums.
+*   **Clarity:** Variable names are uppercase with underscores for readability and convention. Descriptions provide clarity on their purpose.
+*   **Default Values:** While not explicitly in the schema, consider implementing default values within the application logic for `required: false` variables to ensure graceful degradation if they are not provided (e.g., `ENABLE_DATA_EXPORT_SHARE` defaults to `false`).
+*   **Mobile Client Configuration:** For mobile applications, sensitive API keys or secrets should never be directly embedded in the client-side code. Instead, they should be fetched securely from a backend service or managed via secure key storage mechanisms provided by the operating system (e.g., Android KeyStore, iOS Keychain) if strictly necessary for client-side functionality. Public keys or non-sensitive configuration can be provided at build time.
