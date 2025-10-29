@@ -1,0 +1,499 @@
+```yaml
+# Logical Entities and Relationships Specification Document
+
+## Preamble
+
+This document details the logical entities and their relationships for the Personal Carbon Footprint Tracker application, based on the provided PRD. The structure aims to be clear, actionable, and comprehensive for development.
+
+## 1. Core Entities
+
+### User
+*Description: Represents an individual user of the application.*
+```yaml
+User:
+  attributes:
+    user_id:
+      type: UUID
+      description: Unique identifier for the user.
+      required: true
+    email:
+      type: String
+      format: email
+      description: User's email address (for login/notifications).
+      required: true
+      unique: true
+    password_hash:
+      type: String
+      description: Hashed password for user authentication.
+      required: true
+    registration_date:
+      type: DateTime
+      description: Timestamp when the user registered.
+      required: true
+    last_login:
+      type: DateTime
+      description: Timestamp of the user's last login.
+      nullable: true
+    settings:
+      type: JSONB
+      description: User-specific settings (e.g., unit preferences, notification preferences).
+      default: {}
+    profile_data:
+      type: JSONB
+      description: Optional profile information (e.g., name, location for localized tips).
+      default: {}
+```
+
+### CarbonEntry
+*Description: A single data point representing a user's carbon-emitting activity.*
+```yaml
+CarbonEntry:
+  attributes:
+    entry_id:
+      type: UUID
+      description: Unique identifier for the carbon entry.
+      required: true
+    user_id:
+      type: UUID
+      description: Foreign key linking to the User.
+      required: true
+    entry_type:
+      type: Enum
+      values: [Transportation, Energy, Diet, Waste, Other]
+      description: Category of the carbon entry.
+      required: true
+    sub_type:
+      type: String
+      description: More granular type within the category (e.g., "Flight", "Car", "Electricity", "Red Meat").
+      required: true
+    value:
+      type: Decimal
+      description: The quantifiable measure of the activity (e.g., miles, kWh, kg).
+      required: true
+    units:
+      type: String
+      description: Units corresponding to the value (e.g., "miles", "kWh", "kg").
+      required: true
+    carbon_equivalent:
+      type: Decimal
+      description: Calculated CO2e for this entry (kg CO2e).
+      required: true
+    entry_date:
+      type: Date
+      description: The date when the activity occurred.
+      required: true
+    description:
+      type: String
+      description: Optional user-provided description for the entry.
+      nullable: true
+    created_at:
+      type: DateTime
+      description: Timestamp when the entry was recorded in the database.
+      required: true
+```
+
+### CarbonFootprintSummary
+*Description: Aggregated carbon footprint data for a user over a specific period.*
+```yaml
+CarbonFootprintSummary:
+  attributes:
+    summary_id:
+      type: UUID
+      description: Unique identifier for the summary.
+      required: true
+    user_id:
+      type: UUID
+      description: Foreign key linking to the User.
+      required: true
+    period_start_date:
+      type: Date
+      description: Start date of the summary period.
+      required: true
+    period_end_date:
+      type: Date
+      description: End date of the summary period.
+      required: true
+    total_carbon_equivalent:
+      type: Decimal
+      description: Total CO2e for the period (kg CO2e).
+      required: true
+    breakdown_by_type:
+      type: JSONB
+      description: Object storing breakdown by main entry_type (e.g., {Transportation: X, Energy: Y}).
+      default: {}
+    breakdown_by_sub_type:
+      type: JSONB
+      description: Object storing more detailed breakdown (e.g., {Car: A, Flight: B, Electricity: C}).
+      default: {}
+    calculation_date:
+      type: DateTime
+      description: Timestamp when this summary was calculated/last updated.
+      required: true
+```
+
+### Goal
+*Description: Represents a user's carbon reduction goal.*
+```yaml
+Goal:
+  attributes:
+    goal_id:
+      type: UUID
+      description: Unique identifier for the goal.
+      required: true
+    user_id:
+      type: UUID
+      description: Foreign key linking to the User.
+      required: true
+    goal_type:
+      type: Enum
+      values: [AbsoluteReduction, PercentageReduction, TargetValue]
+      description: Type of goal (e.g., reduce by X kg CO2e, reduce by Y%, reach Z kg CO2e).
+      required: true
+    target_value:
+      type: Decimal
+      description: The target number for the goal (e.g., 50 kg for AbsoluteReduction, 10 for PercentageReduction).
+      required: true
+    target_unit:
+      type: String
+      description: Unit for the target_value (e.g., "kg CO2e", "%").
+      required: true
+    start_date:
+      type: Date
+      description: Date when the goal begins.
+      required: true
+    end_date:
+      type: Date
+      description: Date when the goal ends.
+      required: true
+    initial_footprint:
+      type: Decimal
+      description: User's carbon footprint at the start of the goal period (kg CO2e), used as a baseline.
+      nullable: true # Can be set after goal creation
+    status:
+      type: Enum
+      values: [Active, Completed, Failed, Draft]
+      description: Current status of the goal.
+      default: Active
+    created_at:
+      type: DateTime
+      description: Timestamp when the goal was created.
+      required: true
+    updated_at:
+      type: DateTime
+      description: Timestamp when the goal was last updated.
+      required: true
+```
+
+### Tip
+*Description: An actionable sustainability recommendation.*
+```yaml
+Tip:
+  attributes:
+    tip_id:
+      type: UUID
+      description: Unique identifier for the tip.
+      required: true
+    category:
+      type: Enum
+      values: [Transportation, Energy, Diet, Waste, General, Other]
+      description: Category the tip belongs to.
+      required: true
+    title:
+      type: String
+      description: Short, descriptive title of the tip.
+      required: true
+    content:
+      type: Text
+      description: Detailed explanation of the tip and how to implement it.
+      required: true
+    potential_impact_estimate:
+      type: Decimal
+      nullable: true
+      description: Estimated CO2e reduction potential (e.g., 0.5 kg CO2e/day) for this tip.
+    impact_units:
+      type: String
+      nullable: true
+      description: Units for the potential_impact_estimate (e.g., "kg CO2e/day", "kg CO2e/month").
+    difficulty_level:
+      type: Enum
+      values: [Easy, Medium, Hard]
+      description: Perceived difficulty of implementing the tip.
+      default: Medium
+    tags:
+      type: Array<String>
+      description: List of keywords for filtering and personalization.
+      default: []
+    is_active:
+      type: Boolean
+      description: Whether the tip is currently active and can be recommended.
+      default: true
+```
+
+### UserTipInteraction
+*Description: Tracks a user's engagement with specific tips.*
+```yaml
+UserTipInteraction:
+  attributes:
+    interaction_id:
+      type: UUID
+      description: Unique identifier for the interaction.
+      required: true
+    user_id:
+      type: UUID
+      description: Foreign key linking to the User.
+      required: true
+    tip_id:
+      type: UUID
+      description: Foreign key linking to the Tip.
+      required: true
+    action:
+      type: Enum
+      values: [Viewed, Liked, Disliked, Implemented, Dismissed]
+      description: Action taken by the user regarding the tip.
+      required: true
+    interaction_date:
+      type: DateTime
+      description: Timestamp of the interaction.
+      required: true
+    notes:
+      type: Text
+      description: Optional user notes or feedback on the tip.
+      nullable: true
+```
+
+### EducationalContent
+*Description: Stores in-app educational articles or resources.*
+```yaml
+EducationalContent:
+  attributes:
+    content_id:
+      type: UUID
+      description: Unique identifier for the content.
+      required: true
+    title:
+      type: String
+      description: Title of the educational piece.
+      required: true
+    category:
+      type: Enum
+      values: [Basics, Transportation, Energy, Diet, Waste, ClimateChange, Impact, Solutions]
+      description: Category of the content.
+      required: true
+    content_body:
+      type: Text
+      description: The main body of the educational content (supports rich text/markdown).
+      required: true
+    author:
+      type: String
+      nullable: true
+      description: Author or source of the content.
+    published_date:
+      type: Date
+      description: Date when the content was published/added.
+      required: true
+    tags:
+      type: Array<String>
+      description: Keywords for searching and filtering.
+      default: []
+    url: # For external resources
+      type: String
+      format: url
+      nullable: true
+      description: Optional URL if content links to an external resource.
+```
+
+### Notification
+*Description: Manages reminders and nudges for users.*
+```yaml
+Notification:
+  attributes:
+    notification_id:
+      type: UUID
+      description: Unique identifier for the notification.
+      required: true
+    user_id:
+      type: UUID
+      description: Foreign key linking to the User.
+      required: true
+    type:
+      type: Enum
+      values: [ReminderDataEntry, GoalProgress, TipRecommendation, EducationalContent, SystemAlert]
+      description: Type of notification.
+      required: true
+    title:
+      type: String
+      description: Short title for the notification.
+      required: true
+    message:
+      type: Text
+      description: Full message content for the notification.
+      required: true
+    scheduled_at:
+      type: DateTime
+      description: Timestamp when the notification is scheduled to be sent.
+      required: true
+    sent_at:
+      type: DateTime
+      nullable: true
+      description: Timestamp when the notification was actually sent.
+    read_at:
+      type: DateTime
+      nullable: true
+      description: Timestamp when the user read the notification.
+    target_entity_type:
+      type: Enum
+      values: [CarbonEntry, Goal, Tip, EducationalContent, None]
+      nullable: true
+      description: Optional type of entity this notification is related to.
+    target_entity_id:
+      type: UUID
+      nullable: true
+      description: Optional ID of the entity this notification is related to (e.g., a specific Goal ID).
+```
+
+### DataExport
+*Description: Tracks user data export requests.*
+```yaml
+DataExport:
+  attributes:
+    export_id:
+      type: UUID
+      description: Unique identifier for the export request.
+      required: true
+    user_id:
+      type: UUID
+      description: Foreign key linking to the User.
+      required: true
+    request_date:
+      type: DateTime
+      description: Timestamp when the export was requested.
+      required: true
+    status:
+      type: Enum
+      values: [Pending, InProgress, Completed, Failed]
+      default: Pending
+      description: Current status of the export process.
+    file_format:
+      type: Enum
+      values: [CSV, JSON, PDF] # Extend as needed
+      description: Format of the exported data.
+      required: true
+    export_range_start:
+      type: Date
+      nullable: true
+      description: Optional start date for data export range.
+    export_range_end:
+      type: Date
+      nullable: true
+      description: Optional end date for data export range.
+    download_url:
+      type: String
+      format: url
+      nullable: true
+      description: URL where the exported file can be downloaded (e.g., temporarily signed S3 URL).
+    completed_at:
+      type: DateTime
+      nullable: true
+      description: Timestamp when the export was completed and download_url made available.
+```
+
+## 2. Supporting Entities (Admin/System Level)
+
+### CarbonFactors
+*Description: Stores reference data for calculating CO2e from various activities (system managed).*
+```yaml
+CarbonFactors:
+  attributes:
+    factor_id:
+      type: UUID
+      description: Unique identifier for the carbon factor.
+      required: true
+    entry_type:
+      type: Enum
+      values: [Transportation, Energy, Diet, Waste, Other]
+      description: Category this factor applies to.
+      required: true
+    sub_type:
+      type: String
+      description: Specific sub-type (e.g., 'Flight_ShortHaul', 'Electricity_Grid', 'Beef').
+      required: true
+    value_unit:
+      type: String
+      description: Unit of the input value (e.g., 'km', 'kWh', 'kg').
+      required: true
+    co2e_per_unit:
+      type: Decimal
+      description: CO2e equivalent per unit of the activity (e.g., 0.18 kg CO2e per km for car).
+      required: true
+    source:
+      type: String
+      description: Source of the carbon factor data (e.g., 'DEFRA', 'EPA').
+      nullable: true
+    last_updated:
+      type: DateTime
+      description: Timestamp when the factor was last updated.
+      required: true
+    is_active:
+      type: Boolean
+      description: Whether this factor is currently used for calculations.
+      default: true
+    regions:
+      type: Array<String>
+      description: Optional array of regions this factor applies to (e.g., ["Global", "US", "UK"]).
+      default: ["Global"]
+```
+
+## 3. Relationships
+
+### One-to-Many Relationships
+
+*   **User** has many **CarbonEntry**: A user can have multiple carbon entries.
+    *   `CarbonEntry.user_id` -> `User.user_id` (Foreign Key)
+*   **User** has many **CarbonFootprintSummary**: Each user will have historical summaries.
+    *   `CarbonFootprintSummary.user_id` -> `User.user_id` (Foreign Key)
+*   **User** has many **Goal**: A user can set multiple goals.
+    *   `Goal.user_id` -> `User.user_id` (Foreign Key)
+*   **User** has many **UserTipInteraction**: A user can interact with many tips.
+    *   `UserTipInteraction.user_id` -> `User.user_id` (Foreign Key)
+*   **Tip** has many **UserTipInteraction**: A single tip can be interacted with by many users or the same user multiple times.
+    *   `UserTipInteraction.tip_id` -> `Tip.tip_id` (Foreign Key)
+*   **User** has many **Notification**: A user can receive many notifications.
+    *   `Notification.user_id` -> `User.user_id` (Foreign Key)
+*   **User** has many **DataExport**: A user can request multiple data exports.
+    *   `DataExport.user_id` -> `User.user_id` (Foreign Key)
+
+### Many-to-One Relationships (Implicit through Foreign Keys)
+
+*   Each **CarbonEntry** belongs to one **User**.
+*   Each **CarbonFootprintSummary** belongs to one **User**.
+*   Each **Goal** belongs to one **User**.
+*   Each **UserTipInteraction** belongs to one **User** and one **Tip**.
+*   Each **Notification** belongs to one **User**.
+*   Each **Notification** can optionally relate to one **Goal**, one **Tip**, or one **EducationalContent**.
+    *   `Notification.target_entity_id` could point to `Goal.goal_id`, `Tip.tip_id`, or `EducationalContent.content_id` depending on `target_entity_type`. This implies a polymorphic relationship or careful application-level handling to ensure type safety.
+*   Each **DataExport** belongs to one **User**.
+
+### Supporting Relationships
+
+*   **CarbonEntry** utilizes **CarbonFactors** for calculation, primarily based on `entry_type` and `sub_type`. This is an implied logical relationship during the calculation process, not direct FK constraint. The `CarbonFactors` entity serves as a lookup table.
+    *   No direct FK from `CarbonEntry` to `CarbonFactors`, but `CarbonEntry.entry_type` and `CarbonEntry.sub_type` (and potentially `CarbonEntry.units`) are used to look up values in `CarbonFactors`.
+
+## 4. Key Data Flow and Processes
+
+1.  **User Registration/Login**: `User` entity created/authenticated.
+2.  **Data Entry**: User inputs activity data, creating `CarbonEntry` records.
+    *   `CarbonEntry.carbon_equivalent` is calculated using `CarbonFactors` based on `entry_type`, `sub_type`, `value`, and `units`.
+3.  **Footprint Calculation & Display**: `CarbonFootprintSummary` records are generated/updated periodically (e.g., daily, weekly, monthly) by aggregating `CarbonEntry` data for a user.
+    *   `CarbonFootprintSummary` provides data for dashboards and historical visualization.
+4.  **Goal Setting**: User creates `Goal` records.
+    *   `Goal.initial_footprint` might be set based on a `CarbonFootprintSummary` or calculated on the fly.
+5.  **Progress Tracking**: Application monitors user's `CarbonFootprintSummary` against `Goal` records.
+    *   `Notification`s can be triggered based on goal progress.
+6.  **Tip Recommendation**: Application suggests `Tip`s based on user's `CarbonFootprintSummary` breakdown, categories of high impact, and `UserTipInteraction` history (e.g., avoid recommending "implemented" or "disliked" tips).
+    *   User interactions with tips are stored in `UserTipInteraction`.
+7.  **Educational Content**: Users browse or discover `EducationalContent`.
+8.  **Reminders & Nudges**: `Notification`s are scheduled and sent for data logging, goal updates, or new tips/content.
+9.  **Data Export**: Users can request `DataExport` of their `CarbonEntry` and `CarbonFootprintSummary` data. The system generates and provides a temporary download link.
+
+This detailed specification of logical entities and their relationships provides a solid foundation for database design and API development.
+```
