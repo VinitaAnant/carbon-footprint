@@ -1,0 +1,998 @@
+```yaml
+openapi: 3.0.0
+info:
+  title: Personal Carbon Footprint Tracker API
+  version: 1.0.0
+  description: API for managing personal carbon footprint data, calculations, and user interactions.
+
+servers:
+  - url: https://api.carbonfootprintapp.com/v1
+    description: Production server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: Users
+    description: User profile management
+  - name: Footprint Data
+    description: Carbon footprint data input and retrieval
+  - name: Goals
+    description: Carbon reduction goal setting and tracking
+  - name: Tips & Resources
+    description: Sustainability tips and educational content
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the user.
+        email:
+          type: string
+          format: email
+          description: User's email address.
+        username:
+          type: string
+          description: User's chosen username.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the user account was created.
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the user account was last updated.
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT authentication token.
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds.
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - username
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        username:
+          type: string
+    UserUpdateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+    CarbonEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the carbon entry.
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who owns this entry.
+        category:
+          type: string
+          enum:
+            - transportation_flight
+            - transportation_driving
+            - transportation_public
+            - energy_electricity
+            - energy_heating
+            - diet_meat
+            - diet_dairy
+            - diet_plant_based
+            - waste_recycling
+            - waste_landfill
+            - other
+          description: Category of the carbon emission source.
+        value:
+          type: number
+          format: float
+          description: The entered value for the category (e.g., miles driven, kWh consumed, kg waste).
+          example: 100
+        unit:
+          type: string
+          description: Unit for the value (e.g., "miles", "km", "kWh", "kg").
+          example: "miles"
+        carbonEquivalentKg:
+          type: number
+          format: float
+          description: Calculated carbon equivalent in kilograms (CO2e).
+          readOnly: true
+          example: 25.5
+        date:
+          type: string
+          format: date
+          description: Date when the activity occurred.
+        description:
+          type: string
+          nullable: true
+          description: Optional description of the entry.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the entry was created.
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the entry was last updated.
+    CreateCarbonEntryRequest:
+      type: object
+      required:
+        - category
+        - value
+        - unit
+        - date
+      properties:
+        category:
+          type: string
+          enum:
+            - transportation_flight
+            - transportation_driving
+            - transportation_public
+            - energy_electricity
+            - energy_heating
+            - diet_meat
+            - diet_dairy
+            - diet_plant_based
+            - waste_recycling
+            - waste_landfill
+            - other
+          description: Category of the carbon emission source.
+        value:
+          type: number
+          format: float
+          description: The entered value for the category.
+          example: 100
+        unit:
+          type: string
+          description: Unit for the value.
+          example: "miles"
+        date:
+          type: string
+          format: date
+          description: Date when the activity occurred.
+        description:
+          type: string
+          nullable: true
+          description: Optional description of the entry.
+    FootprintSummary:
+      type: object
+      properties:
+        totalCarbonKgCo2e:
+          type: number
+          format: float
+          description: Total carbon footprint for the requested period in kg CO2e.
+        breakdownBySource:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+          description: Carbon footprint broken down by category.
+          example:
+            transportation_driving: 150.7
+            energy_electricity: 80.2
+            diet_meat: 50.0
+    UserGoal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the goal.
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who owns this goal.
+        targetReductionPercentage:
+          type: number
+          format: float
+          description: The percentage reduction target (e.g., 20 for 20% reduction).
+        startDate:
+          type: string
+          format: date
+          description: The date when the goal period starts.
+        endDate:
+          type: string
+          format: date
+          description: The date when the goal period ends.
+        baselineCarbonKgCo2e:
+          type: number
+          format: float
+          nullable: true
+          description: Calculated baseline carbon footprint (kg CO2e) if applicable.
+        currentProgressKgCo2e:
+          type: number
+          format: float
+          nullable: true
+          readOnly: true
+          description: Current calculated carbon footprint (kg CO2e) against the goal.
+        status:
+          type: string
+          enum:
+            - active
+            - completed
+            - expired
+          description: Current status of the goal.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateGoalRequest:
+      type: object
+      required:
+        - targetReductionPercentage
+        - startDate
+        - endDate
+      properties:
+        targetReductionPercentage:
+          type: number
+          format: float
+          description: The percentage reduction target (e.g., 20 for 20% reduction).
+          minimum: 1
+          maximum: 100
+        startDate:
+          type: string
+          format: date
+          description: The date when the goal period starts.
+        endDate:
+          type: string
+          format: date
+          description: The date when the goal period ends.
+    SustainabilityTip:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+            - transportation
+            - energy
+            - diet
+            - waste
+            - general
+        impactLevel:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+        learnMoreLink:
+          type: string
+          format: url
+          nullable: true
+    EducationalResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        summary:
+          type: string
+        type:
+          type: string
+          enum:
+            - article
+            - video
+            - infographic
+        url:
+          type: string
+          format: url
+        tags:
+          type: array
+          items:
+            type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid input or user already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      summary: Authenticate user and get a JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User authenticated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me:
+    get:
+      summary: Get current user's profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized.
+        '404':
+          description: User not found.
+    put:
+      summary: Update current user's profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: User profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+
+  /carbon-entries:
+    get:
+      summary: Get all carbon footprint entries for the current user
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Filter entries from this date (inclusive).
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: Filter entries up to this date (inclusive).
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum:
+              - transportation_flight
+              - transportation_driving
+              - transportation_public
+              - energy_electricity
+              - energy_heating
+              - diet_meat
+              - diet_dairy
+              - diet_plant_based
+              - waste_recycling
+              - waste_landfill
+              - other
+          description: Filter entries by category.
+      responses:
+        '200':
+          description: A list of carbon footprint entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarbonEntry'
+        '401':
+          description: Unauthorized.
+    post:
+      summary: Create a new carbon footprint entry
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCarbonEntryRequest'
+      responses:
+        '201':
+          description: Carbon entry created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarbonEntry'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+
+  /carbon-entries/{entryId}:
+    get:
+      summary: Get a specific carbon footprint entry by ID
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the carbon entry to retrieve.
+      responses:
+        '200':
+          description: Carbon entry details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarbonEntry'
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Entry not found.
+    put:
+      summary: Update a specific carbon footprint entry by ID
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the carbon entry to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCarbonEntryRequest' # Reusing schema as update often allows same fields
+      responses:
+        '200':
+          description: Carbon entry updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarbonEntry'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Entry not found.
+    delete:
+      summary: Delete a specific carbon footprint entry by ID
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the carbon entry to delete.
+      responses:
+        '204':
+          description: Carbon entry deleted successfully.
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Entry not found.
+
+  /carbon-footprint/summary:
+    get:
+      summary: Get the user's carbon footprint summary and breakdown
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          required: true
+          description: Start date for calculating the footprint summary (inclusive).
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          required: true
+          description: End date for calculating the footprint summary (inclusive).
+      responses:
+        '200':
+          description: Carbon footprint summary and breakdown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FootprintSummary'
+        '400':
+          description: Invalid date range.
+        '401':
+          description: Unauthorized.
+
+  /goals:
+    get:
+      summary: Get all carbon reduction goals for the current user
+      tags:
+        - Goals
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, completed, expired]
+          description: Filter goals by status.
+      responses:
+        '200':
+          description: A list of user's carbon reduction goals.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserGoal'
+        '401':
+          description: Unauthorized.
+    post:
+      summary: Create a new carbon reduction goal
+      tags:
+        - Goals
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalRequest'
+      responses:
+        '201':
+          description: Goal created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGoal'
+        '400':
+          description: Invalid input or overlapping goal dates.
+        '401':
+          description: Unauthorized.
+
+  /goals/{goalId}:
+    get:
+      summary: Get a specific carbon reduction goal by ID
+      tags:
+        - Goals
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the goal to retrieve.
+      responses:
+        '200':
+          description: Goal details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGoal'
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Goal not found.
+    put:
+      summary: Update a specific carbon reduction goal by ID
+      tags:
+        - Goals
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the goal to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalRequest' # Reusing schema for update
+      responses:
+        '200':
+          description: Goal updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGoal'
+        '400':
+          description: Invalid input or overlapping goal dates.
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Goal not found.
+    delete:
+      summary: Delete a specific carbon reduction goal by ID
+      tags:
+        - Goals
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the goal to delete.
+      responses:
+        '204':
+          description: Goal deleted successfully.
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Goal not found.
+
+  /goals/{goalId}/progress:
+    get:
+      summary: Get the progress details for a specific carbon reduction goal
+      tags:
+        - Goals
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: goalId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: ID of the goal to get progress for.
+      responses:
+        '200':
+          description: Goal progress details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goal:
+                    $ref: '#/components/schemas/UserGoal'
+                  baselinePeriodSummary:
+                    $ref: '#/components/schemas/FootprintSummary'
+                    description: Calculated footprint for the baseline period of the goal.
+                  currentPeriodSummary:
+                    $ref: '#/components/schemas/FootprintSummary'
+                    description: Calculated footprint for the current period against the goal.
+                  progressPercentage:
+                    type: number
+                    format: float
+                    description: Percentage progress towards the goal.
+                    example: 15.5
+                  carbonReductionAchievedKgCo2e:
+                    type: number
+                    format: float
+                    description: Actual reduction in carbon (kg CO2e) achieved so far.
+                    example: 50.3
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Goal not found.
+
+  /tips:
+    get:
+      summary: Get a list of sustainability tips
+      tags:
+        - Tips & Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum:
+              - transportation
+              - energy
+              - diet
+              - waste
+              - general
+          description: Filter tips by category.
+        - in: query
+          name: impactLevel
+          schema:
+            type: string
+            enum:
+              - low
+              - medium
+              - high
+          description: Filter tips by impact level.
+      responses:
+        '200':
+          description: A list of sustainability tips.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SustainabilityTip'
+        '401':
+          description: Unauthorized.
+
+  /resources:
+    get:
+      summary: Get a list of educational resources
+      tags:
+        - Tips & Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum:
+              - article
+              - video
+              - infographic
+          description: Filter resources by type.
+        - in: query
+          name: tag
+          schema:
+            type: string
+          description: Filter resources by a specific tag.
+      responses:
+        '200':
+          description: A list of educational resources.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EducationalResource'
+        '401':
+          description: Unauthorized.
+
+  /data-export:
+    get:
+      summary: Export user's carbon footprint data
+      tags:
+        - Footprint Data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+          description: Desired export format.
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Start date for data export.
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: End date for data export.
+      responses:
+        '200':
+          description: User data exported successfully.
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarbonEntry'
+        '401':
+          description: Unauthorized.
+        '400':
+          description: Invalid parameters.
+
+  /reminders:
+    post:
+      summary: Configure or schedule a reminder
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - schedule
+              properties:
+                type:
+                  type: string
+                  enum: [data_entry, tip_recommendation, goal_progress]
+                  description: Type of reminder.
+                schedule:
+                  type: string
+                  description: Cron-style schedule, e.g., "0 10 * * 1" for every Monday at 10 AM. Or "daily", "weekly".
+                message:
+                  type: string
+                  nullable: true
+                  description: Custom reminder message.
+      responses:
+        '200':
+          description: Reminder configured successfully.
+        '400':
+          description: Invalid reminder configuration.
+        '401':
+          description: Unauthorized.
+
+  /notifications:
+    get:
+      summary: Get user's recent notifications (reminders and nudges)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of recent notifications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [data_entry, tip_recommendation, goal_progress, custom]
+                    message:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+                    read:
+                      type: boolean
+        '401':
+          description: Unauthorized.
+
+```
